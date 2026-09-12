@@ -200,11 +200,12 @@ local SaveManager = {} do
 
 		section:AddDivider()
 
-		section:AddButton('Create config', function()
-			local name = Options.SaveManager_ConfigName.Value
+		section:AddButton('Save config', function()
+			local typed = Options.SaveManager_ConfigName.Value
+			local name = typed:gsub(' ', '') ~= '' and typed or Options.SaveManager_ConfigList.Value
 
-			if name:gsub(' ', '') == '' then 
-				return self.Library:Notify('Invalid config name (empty)', 2)
+			if not name then
+				return self.Library:Notify('Type a name or select a config', 2)
 			end
 
 			local success, err = self:Save(name)
@@ -212,10 +213,10 @@ local SaveManager = {} do
 				return self.Library:Notify('Failed to save config: ' .. err)
 			end
 
-			self.Library:Notify(string.format('Created config %q', name))
+			self.Library:Notify(string.format('Saved config %q', name))
 
 			Options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
-			Options.SaveManager_ConfigList:SetValue(nil)
+			Options.SaveManager_ConfigList:SetValue(name)
 		end):AddButton('Load config', function()
 			local name = Options.SaveManager_ConfigList.Value
 
@@ -227,24 +228,13 @@ local SaveManager = {} do
 			self.Library:Notify(string.format('Loaded config %q', name))
 		end)
 
-		section:AddButton('Overwrite config', function()
-			local name = Options.SaveManager_ConfigList.Value
-
-			local success, err = self:Save(name)
-			if not success then
-				return self.Library:Notify('Failed to overwrite config: ' .. err)
-			end
-
-			self.Library:Notify(string.format('Overwrote config %q', name))
-		end)
-
-		section:AddButton('Refresh list', function()
-			Options.SaveManager_ConfigList:SetValues(self:RefreshConfigList())
-			Options.SaveManager_ConfigList:SetValue(nil)
-		end)
-
 		section:AddButton('Set as autoload', function()
 			local name = Options.SaveManager_ConfigList.Value
+
+			if not name then
+				return self.Library:Notify('No config selected', 2)
+			end
+
 			writefile(self.Folder .. '/settings/autoload.txt', name)
 			SaveManager.AutoloadLabel:SetText('Current autoload config: ' .. name)
 			self.Library:Notify(string.format('Set %q to auto load', name))
